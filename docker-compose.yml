@@ -1,0 +1,141 @@
+name: greensi
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-greensi}
+      POSTGRES_USER: ${DATABASE_USER:-greensi}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-greensi}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DATABASE_EXPOSED_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-greensi} -d ${DATABASE_NAME:-greensi}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - backend
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      VERSION: 1
+      POST: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      NETWORKS: 0
+      NODES: 0
+      PLUGINS: 0
+      SECRETS: 0
+      SERVICES: 0
+      SESSION: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker-proxy
+
+  api:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - backend
+
+  collector:
+    build:
+      context: .
+      target: collector
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: postgres
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
+      PROCFS_PATH: /host/proc
+      SYSFS_PATH: /hostsys
+      BMC_REDFISH_URL: ${BMC_REDFISH_URL:-}
+      BMC_USERNAME: ${BMC_USERNAME:-}
+      BMC_PASSWORD: ${BMC_PASSWORD:-}
+      BMC_VERIFY_TLS: ${BMC_VERIFY_TLS:-true}
+      COLLECTOR_HOST_NAME: ${COLLECTOR_HOST_NAME:-machine-locale}
+      PROJECTS_ROOT_HOST: ${PROJECTS_ROOT:-/home}
+      PROJECTS_ROOT_MOUNT: /host/projects
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+      docker-socket-proxy:
+        condition: service_started
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/hostsys:ro
+      - ${PROJECTS_ROOT:-/home}:/host/projects:ro
+      - ./data/calibration:/data/calibration
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    group_add:
+      - "${RAPL_GID:-1000}"
+    pid: host
+    networks:
+      - backend
+      - docker-proxy
+
+  front:
+    build:
+      context: ../greenFront
+      target: web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${FRONT_PORT:-3000}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+  docker-proxy:
+    internal: true

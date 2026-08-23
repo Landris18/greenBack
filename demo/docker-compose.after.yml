@@ -1,0 +1,47 @@
+name: greensi-demo-after
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.after
+    restart: unless-stopped
+    environment:
+      VARIANT: apres-optimisation
+      WORK_ROUNDS: 30000
+      BALLAST_MB: 20
+    cpus: 0.50
+    mem_limit: 256m
+    networks:
+      - demo
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: demo
+      POSTGRES_USER: demo
+      POSTGRES_DB: demo
+    cpus: 0.50
+    mem_limit: 256m
+    networks:
+      - demo
+
+  load:
+    build:
+      context: .
+      dockerfile: Dockerfile.after
+    restart: unless-stopped
+    command: ["python", "load.py"]
+    environment:
+      TARGET_URL: http://api:8080/work
+      REQUEST_INTERVAL: "1.0"
+    cpus: 0.10
+    mem_limit: 64m
+    depends_on:
+      - api
+    networks:
+      - demo
+
+networks:
+  demo:

@@ -1,0 +1,53 @@
+name: greensi-demo-before
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.before
+    restart: unless-stopped
+    environment:
+      VARIANT: avant-optimisation
+      WORK_ROUNDS: 30000
+      BALLAST_MB: 220
+    networks:
+      - demo
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: demo
+      POSTGRES_USER: demo
+      POSTGRES_DB: demo
+    networks:
+      - demo
+
+  cache:
+    image: redis:7
+    restart: unless-stopped
+    networks:
+      - demo
+
+  admin:
+    image: adminer:latest
+    restart: unless-stopped
+    networks:
+      - demo
+
+  load:
+    build:
+      context: .
+      dockerfile: Dockerfile.before
+    restart: unless-stopped
+    command: ["python", "load.py"]
+    environment:
+      TARGET_URL: http://api:8080/work
+      REQUEST_INTERVAL: "1.0"
+    depends_on:
+      - api
+    networks:
+      - demo
+
+networks:
+  demo:

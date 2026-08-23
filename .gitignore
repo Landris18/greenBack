@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+
+# Donnees de mesure locales (specifiques a la machine), a copier a part pour
+# l'annexe du memoire plutot qu'a versionner ici.
+data/
+CLAUDE.md
