@@ -281,7 +281,7 @@ app/
   recommendation/  regles d'execution + orchestration du scan
   carbon/ comparison/ setting/
   collector/       stream.py, frame.py, aggregator.py, supervisor.py, config_reader.py
-tests/             215 tests, essentiellement des fonctions pures
+tests/             240 tests, essentiellement des fonctions pures
 ```
 
 ## Le collecteur
