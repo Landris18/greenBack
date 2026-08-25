@@ -47,6 +47,12 @@ services:
       VOLUMES: 0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro,z
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2375/version"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
     networks:
       - docker-proxy
 
@@ -98,7 +104,7 @@ services:
       api:
         condition: service_started
       docker-socket-proxy:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - /proc:/host/proc:ro
       - /sys:/hostsys:ro
