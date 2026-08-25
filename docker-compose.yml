@@ -46,7 +46,7 @@ services:
       TASKS: 0
       VOLUMES: 0
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro,z
     networks:
       - docker-proxy
 
@@ -100,10 +100,10 @@ services:
       docker-socket-proxy:
         condition: service_started
     volumes:
-      - /proc:/host/proc:ro
-      - /sys:/hostsys:ro
-      - ${PROJECTS_ROOT:-/home}:/host/projects:ro
-      - ./data/calibration:/data/calibration
+      - /proc:/host/proc:ro,z
+      - /sys:/hostsys:ro,z
+      - ${PROJECTS_ROOT:-/home}:/host/projects:ro,z
+      - ./data/calibration:/data/calibration:z
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     group_add:
       - "${RAPL_GID:-1000}"
