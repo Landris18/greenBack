@@ -100,8 +100,8 @@ services:
       docker-socket-proxy:
         condition: service_started
     volumes:
-      - /proc:/host/proc:ro,z
-      - /sys:/hostsys:ro,z
+      - /proc:/host/proc:ro
+      - /sys:/hostsys:ro
       - ${PROJECTS_ROOT:-/home}:/host/projects:ro,z
       - ./data/calibration:/data/calibration:z
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"

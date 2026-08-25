@@ -45,10 +45,14 @@ démarre la pile. Sans argument supplémentaire, tout est prêt.
 Compte initial : `admin@greensi.fr` / valeur de `SEED_ADMIN_PASSWORD` dans le `.env`.
 
 Sur une distribution avec SELinux en mode `Enforcing` (Fedora, RHEL, CentOS — vérifiable avec
-`getenforce`), les montages bind vers le socket Docker, `/proc`, `/sys` et le dossier des projets
-portent le suffixe `:z` dans `docker-compose.yml`. Sans lui, SELinux bloque silencieusement ces
-accès : le collector tourne, mais ne détecte jamais aucun conteneur (aucune erreur visible dans
-`docker ps`, seulement dans `docker compose logs collector`).
+`getenforce`), les montages bind vers le socket Docker, le dossier des projets et le journal de
+calibration portent le suffixe `:z` dans `docker-compose.yml`. Sans lui, SELinux bloque
+silencieusement ces accès : le collector tourne, mais ne détecte jamais aucun conteneur (aucune
+erreur visible dans `docker ps`, seulement dans `docker compose logs collector`). `/proc` et `/sys`
+n'ont volontairement pas ce suffixe : ce sont des systèmes de fichiers virtuels du noyau, que
+SELinux refuse de relabelliser (Docker échoue avec « SELinux relabeling of /proc is not allowed »
+si on l'ajoute) ; leur lecture en conteneur reste néanmoins autorisée par la politique SELinux par
+défaut.
 
 ## Architecture
 
